@@ -2,7 +2,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.all;
-
+--Note: To cover all IEE754 range,it seems like input has to be 128 bit + 1 sign bit !!!
 
 --Converts a decimal 2's complement number into single-precision floating-point number. Only denormalized number that can occur in a 32-bit decimal is zero,which is treated specially.
 --Method works as follows;
