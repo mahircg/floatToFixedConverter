@@ -38,6 +38,7 @@ signal shiftNumber	: STD_LOGIC_VECTOR(4 downto 0);
 signal oneFlag			: STD_LOGIC;
 signal sign				: STD_LOGIC;
 signal decimalReg		: STD_LOGIC_VECTOR(31 downto 0);
+signal PEReg			: STD_LOGIC_VECTOR(31 downto 0);
 signal fraction		: STD_LOGIC_VECTOR(31 downto 0);
 signal inputReg		: STD_LOGIC_VECTOR(31 downto 0);
 
@@ -47,12 +48,18 @@ begin
 decimalReg		<= 	to_stdlogicvector(to_bitvector(decimal) sra to_integer(unsigned(fw))) when decimal(31)='0'	
 else 						std_logic_vector(unsigned(not(to_stdlogicvector(to_bitvector(decimal) sra to_integer(unsigned(fw))))) + 1) ;
 
+
+
 fraction 		<= 	std_logic_vector(unsigned(decimal) sll to_integer(32-unsigned(fw)));
+
+PEReg				<= 	to_stdlogicvector(to_bitvector(decimalReg) sll to_integer(unsigned(fw))) OR to_stdlogicvector(to_bitvector(fraction) srl to_integer(32-unsigned(fw)));
 
 sign<=decimal(31);
 
 Priority_Encoder: PE_First1_32bit
-	PORT MAP(decimal,shiftNumber,oneFlag);
+	PORT MAP(PEReg,shiftNumber,oneFlag);
+
+
 
 process(decimal,decimalReg,oneFlag,sign,shiftNumber,fw,fraction)
 
