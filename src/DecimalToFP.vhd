@@ -21,42 +21,48 @@ use IEEE.NUMERIC_STD.all;
 --4) Apply logical shift to input by 32-fw bits to get the fractional part of the number.
 --5) Exponent is still given by the index of first 1 of decimal part.
 entity DecimalToFP is
-    Port ( 	fw		  : in STD_LOGIC_VECTOR(4 downto 0);
-				decimal : in  STD_LOGIC_VECTOR (31 downto 0);
+	 Generic (
+				inputWidth: INTEGER := 128;
+				fwWidth   : INTEGER := 7
+				);
+    Port ( 	fw		  : in STD_LOGIC_VECTOR(fwWidth -1 downto 0);
+				decimal : in  STD_LOGIC_VECTOR (inputWidth-1 downto 0);
 				fp : out  STD_LOGIC_VECTOR (31 downto 0));
 end DecimalToFP;
 
 architecture Behavioral of DecimalToFP is
 
-component PE_First1_32bit is 
-	Port(   inp 	: in  STD_LOGIC_VECTOR (31 downto 0);
-           outp 	: out  STD_LOGIC_VECTOR (4 downto 0);
-           v 		: out  STD_LOGIC);
-end component;
+    COMPONENT PE_First_128Bit
+    PORT(
+         inp : IN  std_logic_vector(inputWidth-1 downto 0);
+         outp : OUT  std_logic_vector(fwWidth -1 downto 0);
+         v : OUT  std_logic
+        );
+    END COMPONENT;
 
-signal shiftNumber	: STD_LOGIC_VECTOR(4 downto 0);
+signal shiftNumber	: STD_LOGIC_VECTOR(fwWidth -1  downto 0);
 signal oneFlag			: STD_LOGIC;
 signal sign				: STD_LOGIC;
-signal decimalReg		: STD_LOGIC_VECTOR(31 downto 0);
-signal PEReg			: STD_LOGIC_VECTOR(31 downto 0);
-signal fraction		: STD_LOGIC_VECTOR(31 downto 0);
-signal inputReg		: STD_LOGIC_VECTOR(31 downto 0);
+signal decimalReg		: STD_LOGIC_VECTOR(inputWidth-1 downto 0);
+signal PEReg			: STD_LOGIC_VECTOR(inputWidth-1 downto 0);
+signal fraction		: STD_LOGIC_VECTOR(inputWidth-1 downto 0);
+signal inputReg		: STD_LOGIC_VECTOR(inputWidth-1 downto 0);
 
 							
 begin
 
-decimalReg		<= 	to_stdlogicvector(to_bitvector(decimal) sra to_integer(unsigned(fw))) when decimal(31)='0'	
+decimalReg		<= 	to_stdlogicvector(to_bitvector(decimal) sra to_integer(unsigned(fw))) when decimal(inputWidth-1)='0'	
 else 						std_logic_vector(unsigned(not(to_stdlogicvector(to_bitvector(decimal) sra to_integer(unsigned(fw))))) + 1) ;
 
 
 
-fraction 		<= 	std_logic_vector(unsigned(decimal) sll to_integer(32-unsigned(fw)));
+fraction 		<= 	std_logic_vector(unsigned(decimal) sll to_integer(inputWidth-unsigned(fw)));
 
-PEReg				<= 	to_stdlogicvector(to_bitvector(decimalReg) sll to_integer(unsigned(fw))) OR to_stdlogicvector(to_bitvector(fraction) srl to_integer(32-unsigned(fw)));
+PEReg				<= 	to_stdlogicvector(to_bitvector(decimalReg) sll to_integer(unsigned(fw))) OR to_stdlogicvector(to_bitvector(fraction) srl to_integer(inputWidth-unsigned(fw)));
 
-sign<=decimal(31);
+sign<=decimal(inputWidth-1);
 
-Priority_Encoder: PE_First1_32bit
+Priority_Encoder: PE_First_128Bit
 	PORT MAP(PEReg,shiftNumber,oneFlag);
 
 
@@ -65,18 +71,18 @@ process(decimal,decimalReg,oneFlag,sign,shiftNumber,fw,fraction)
 
 variable exponent: STD_LOGIC_VECTOR(7 downto 0);
 variable mantissa: STD_LOGIC_VECTOR(22 downto 0);
-variable temp	  : STD_LOGIC_VECTOR(31 downto 0);
-variable temp2	  : STD_LOGIC_VECTOR(31 downto 0);
+variable temp	  : STD_LOGIC_VECTOR(inputWidth-1 downto 0);
+variable temp2	  : STD_LOGIC_VECTOR(inputWidth-1 downto 0);
 variable offset  : NATURAL;
 
 begin
 if oneFlag='0' then
 	fp<=X"00000000";
 else
-	exponent := std_logic_vector(to_signed(127,exponent'length)+(to_signed(to_integer(signed(shiftNumber)-signed(fw)),exponent'length)));
-	temp		:= std_logic_vector(unsigned(decimalReg) sll to_integer(32-to_signed(to_integer(signed(shiftNumber)-signed(fw)),6)));
+	exponent := std_logic_vector(to_signed(127,exponent'length)+(('0'& signed(shiftNumber))- ('0'& signed(fw))));
+	temp		:= std_logic_vector(unsigned(decimalReg) sll to_integer(inputWidth-(('0'& signed(shiftNumber))-('0' & signed(fw)))));
 	temp2		:=	std_logic_vector(unsigned(fraction) srl to_integer(signed(shiftNumber)-signed(fw)));	
-	mantissa:=temp(31 downto 9) OR  temp2(31 downto 9)  ; 
+	mantissa:=temp(inputWidth-1 downto (inputWidth-1)-22) OR  temp2(inputWidth-1 downto (inputWidth-1)-22)  ; 
 	fp<=sign&exponent&mantissa;
 end if;
 

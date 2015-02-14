@@ -5,12 +5,16 @@ use IEEE.NUMERIC_STD.all;
 
 
 entity FPToDecimal is
+	 Generic (
+			  outputWidth		: INTEGER := 128;
+			  fwWidth			: INTEGER := 7
+			  );
     Port ( fp 					: in  	STD_LOGIC_VECTOR (31 downto 0);
-			  fw					: in  	STD_LOGIC_VECTOR (4 downto 0);
+			  fw					: in  	STD_LOGIC_VECTOR (fwWidth-1 downto 0);
 			  NaN					: out 	STD_LOGIC;
 			  p_infinity		: out 	STD_LOGIC;
 			  n_infinity		: out 	STD_LOGIC;
-           decimal 			: out  	STD_LOGIC_VECTOR (31 downto 0));
+           decimal 			: out  	STD_LOGIC_VECTOR (outputWidth-1 downto 0));
 end FPToDecimal;
 
 architecture Behavioral of FPToDecimal is
@@ -25,11 +29,11 @@ variable mantissa				: STD_LOGIC_VECTOR(22 downto 0);
 variable dec					: STD_LOGIC_VECTOR(22 downto 0);
 variable fraction				: STD_LOGIC_VECTOR(22 downto 0);
 variable temp					: STD_LOGIC_VECTOR(22 downto 0);
-variable decimalFracPart	: STD_LOGIC_VECTOR(31 downto 0);
-variable decimalIntPart		: STD_LOGIC_VECTOR(31 downto 0);
+variable decimalFracPart	: STD_LOGIC_VECTOR(outputWidth-1 downto 0);
+variable decimalIntPart		: STD_LOGIC_VECTOR(outputWidth-1 downto 0);
 variable exponent				: INTEGER RANGE 0 to 255;
 variable exponent_val		: INTEGER RANGE -127 to 126;	
-variable fw_val				: INTEGER RANGE 0 to 31;
+variable fw_val				: INTEGER RANGE 0 to outputWidth-1;
 
 begin
 exponent			:=	to_integer(unsigned(fp(30 downto 23)));
@@ -73,11 +77,11 @@ else
 		
 		temp						:= std_logic_vector(unsigned(mantissa) srl(23-exponent_val));
 		dec						:= ("100"&X"00000") OR  std_logic_vector(unsigned(temp) sll (22 - exponent_val));
-		decimalFracPart		:= "0"& X"00" & std_logic_vector(unsigned(fraction) srl (23-fw_val));
+		decimalFracPart		:= std_logic_vector(resize(unsigned(fraction) srl (23-fw_val),decimalFracPart'length));
 		if sign='0' then
-			decimalIntPart			:= "0"& X"00" & std_logic_vector(unsigned(dec) srl (22-(fw_val+exponent_val)));
+			decimalIntPart			:=  std_logic_vector(resize(unsigned(dec) srl (22-(fw_val+exponent_val)),decimalIntPart'length));
 		else
-			decimalIntPart			:= "1"& X"FF" & std_logic_vector(unsigned(not(unsigned(dec) srl (22-(fw_val+exponent_val))))+1) ;
+			decimalIntPart			:= std_logic_vector(resize(signed(not(unsigned(dec) srl (22-(fw_val+exponent_val))))+1,decimalIntPart'length)) ;
 		end if;
 		
 		decimal 					<= decimalFracPart OR decimalIntPart;
