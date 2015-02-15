@@ -56,6 +56,10 @@ BEGIN
 		
 		decimal<=X"7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
 		wait for 200 ns;
+		fw<="1111111";
+		
+		decimal<=X"00000000000000000000000000000001";
+		wait for 200 ns;
 		fw<="0000010";
 		decimal<=X"00000000000000000000000000000025";
 		wait for 200 ns;
