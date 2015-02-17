@@ -1,4 +1,4 @@
-
+-- Denormalized conversion support added.
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.all;
@@ -6,8 +6,8 @@ use IEEE.NUMERIC_STD.all;
 
 entity FPToDecimal is
 	 Generic (
-			  outputWidth		: INTEGER := 128;
-			  fwWidth			: INTEGER := 7
+			  outputWidth		: INTEGER := 150;
+			  fwWidth			: INTEGER := 8
 			  );
     Port ( fp 					: in  	STD_LOGIC_VECTOR (31 downto 0);				--Floating point input.
 			  fw					: in  	STD_LOGIC_VECTOR (fwWidth-1 downto 0);		--Place of point in fixed-point output.
@@ -57,12 +57,14 @@ elsif exponent = 0 then
 		p_infinity <= '0';
 		n_infinity <= '0';
 		NaN <= '0';
-		decimal <= (others => '0');
+		decimal(decimal'high) <= sign;
+		decimal(decimal'high downto 23) <= (others => '0');
+		decimal(22 downto 0) <= mantissa;
+	--	decimal <= to_stdlogicvector(decimal'high => sign,decimal'high-1 downto 23 => '0',22 downto 0 => mantissa);
 	--exponent for every denormalized number is 2^-127. Therefore,in order to represent any denormalized number(except 0) is to extend the
 	--output bit length into 128+22
 	--denormalized case will be handled here
-	--if fp(30 downto 0) = "000" & X"0000000" then
-		--decimal <= X"00000000";
+
 else
 
 		p_infinity 				<= '0';

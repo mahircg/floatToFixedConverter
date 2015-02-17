@@ -12,8 +12,8 @@ ARCHITECTURE behavior OF FPToDecimal_TB IS
     
  
     COMPONENT FPToDecimal
-	 GENERIC( outputWidth	: INTEGER := 128;
-				 fwWidth			: INTEGER := 7
+	 GENERIC( outputWidth	: INTEGER := 150;
+				 fwWidth			: INTEGER := 8
 				);
     PORT ( fp 					: in  	STD_LOGIC_VECTOR (31 downto 0);
 			  fw					: in  	STD_LOGIC_VECTOR (fwWidth-1 downto 0);
@@ -26,14 +26,14 @@ ARCHITECTURE behavior OF FPToDecimal_TB IS
 
 
    signal fp : std_logic_vector(31 downto 0) := (others => '0');
-	signal fw : std_logic_vector(6 downto 0) := (others => '0');
+	signal fw : std_logic_vector(7 downto 0) := (others => '0');
 
 	
 
 	signal NaN: std_logic :='0';
 	signal p_infinity: std_logic :='0';
 	signal n_infinity: std_logic :='0';
-   signal decimal : std_logic_vector(127 downto 0);
+   signal decimal : std_logic_vector(149 downto 0);
 
  
    
@@ -49,8 +49,6 @@ BEGIN
 			 n_infinity => n_infinity,
           decimal => decimal
         );
-
-
  
 
    -- Stimulus process
@@ -58,23 +56,26 @@ BEGIN
    begin		
       -- hold reset state for 100 ns.
       wait for 100 ns;	
-	   fw <= "0000100";
+	   fw <= "00000100";
       fp <= "00111110010000000000000000000000";			--0.1875
 		wait for 100 ns;
-		fw <= "0000011";
+		fw <= "00000011";
       fp <= "00111110000000000000000000000000";			--0.125
 		wait for 100 ns;
-		fw <= "0000000";
+		fw <= "00000000";
       fp <= "01000010110010000000000000000000";			--100
 		wait for 100 ns;
-		fw <= "0000010";
+		fw <= "00000010";
       fp <= "11000001000101000000000000000000";			-- -9.25
 		wait for 100 ns;
+		fw <= "10010101";
 		fp <= "01111111100000000000000000000000";
 		wait for 100 ns;
 		fp <= "11111111100000000000000000000000";
 		wait for 100 ns;
 		fp <= "11111111100000000010000000000000";
+		wait for 100 ns;
+		fp <= "00000000010000000010000000000000";
 		wait for 100 ns;
 		
 
