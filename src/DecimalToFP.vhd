@@ -26,69 +26,107 @@ use IEEE.NUMERIC_STD.all;
 -- Forgotten in notes of revision 2,added here; integer part of fixed-point input is signed.
 entity DecimalToFP is
 	 Generic (
-				inputWidth: INTEGER := 128;
-				fwWidth   : INTEGER := 7
+				inputWidth: INTEGER := 150;
+				fwWidth   : INTEGER := 8
 				);
     	 Port ( 	fw		  : in STD_LOGIC_VECTOR(fwWidth -1 downto 0);			-- Floating width
 				decimal : in  STD_LOGIC_VECTOR (inputWidth-1 downto 0);		-- Fixed-point input
 				fp : out  STD_LOGIC_VECTOR (31 downto 0));						-- Single precision floating-point output
 end DecimalToFP;
 
+
+
+
+		
+
 architecture Behavioral of DecimalToFP is
 
-    COMPONENT PE_First_128Bit		--128-bit priority encoder doesn't sound good,does it :) This module causes considerable amount of delay,since it is in the critical path as well.Anyways,without delving into a
-    PORT(								--sequential design,it seems convenient to use.
-         inp : IN  std_logic_vector(inputWidth-1 downto 0);
-         outp : OUT  std_logic_vector(fwWidth -1 downto 0);
-         v : OUT  std_logic
-        );
-    END COMPONENT;
+--    COMPONENT PE_First_128Bit		--128-bit priority encoder doesn't sound good,does it :) This module causes considerable amount of delay,since it is in the critical path as well.Anyways,without delving into a
+--    PORT(								--sequential design,it seems convenient to use.
+--         inp : IN  std_logic_vector(inputWidth-1 downto 0);
+--         outp : OUT  std_logic_vector(fwWidth -1 downto 0);
+--         v : OUT  std_logic
+--        );
+--    END COMPONENT;
+	 
+procedure findFirst1
+					(  inp : in STD_LOGIC_VECTOR(inputWidth-1 downto 0);
+						index: out STD_LOGIC_VECTOR(fwWidth -1  downto 0);
+						v : out STD_LOGIC   ) is
+begin
+	for i in inp'high downto inp'low loop
+	if inp(i)='1' then 
+		index:=std_logic_vector(to_unsigned(i,index'length));
+		v :='1';
+		exit;
+	else
+		index := (others => '0');
+		v  := '0';
+	end if;
+end loop;
+end findFirst1;
+	
 
-signal shiftNumber	: STD_LOGIC_VECTOR(fwWidth -1  downto 0);		--Gives the index of first one in the input.
-signal oneFlag			: STD_LOGIC;											--When asserted,it means there is no 1 in input.
-signal sign				: STD_LOGIC;											--Register for sign bit.
-signal decimalReg		: STD_LOGIC_VECTOR(inputWidth-1 downto 0);	--Register to hold unsigned value of signed part of the input.
-signal PEReg			: STD_LOGIC_VECTOR(inputWidth-1 downto 0);	--Used in order to check the first one in uncomplemented form of input.
-signal fraction		: STD_LOGIC_VECTOR(inputWidth-1 downto 0);	--Register to hold fractional part.
+
+
+
 
 
 							
 begin
 
+
+
+--Priority_Encoder: PE_First_128Bit
+--	PORT MAP(PEReg,shiftNumber,oneFlag);
+
+
+process(decimal,fw)
+
+variable PEReg				: STD_LOGIC_VECTOR(inputWidth-1 downto 0);	--Used in order to check the first one in uncomplemented form of input.
+variable oneFlag			: STD_LOGIC;											--When asserted,it means there is no 1 in input.
+variable shiftNumber		: STD_LOGIC_VECTOR(fwWidth -1  downto 0);		--Gives the index of first one in the input.
+variable exponent			: STD_LOGIC_VECTOR(7 downto 0);		--Value of biased exponent.
+variable mantissa			: STD_LOGIC_VECTOR(22 downto 0);		--Variable to hold mantissa part of floating point number.
+variable temp	  			: STD_LOGIC_VECTOR(inputWidth-1 downto 0);		--Temp. register to hold intermediate values.
+variable temp2	  			: STD_LOGIC_VECTOR(inputWidth-1 downto 0);
+variable sign				: STD_LOGIC;											--Register for sign bit.
+variable decimalReg		: STD_LOGIC_VECTOR(inputWidth-1 downto 0);	--Register to hold unsigned value of signed part of the input.
+variable fraction			: STD_LOGIC_VECTOR(inputWidth-1 downto 0);	--Register to hold fractional part.
+
+begin
+sign					:=decimal(inputWidth-1);
+
 -- Take two's complement and add 1 to input if it is signed,to achieve unsigned value.
-decimalReg		<= 	to_stdlogicvector(to_bitvector(decimal) sra to_integer(unsigned(fw))) when decimal(inputWidth-1)='0'	
-else 						std_logic_vector(unsigned(not(to_stdlogicvector(to_bitvector(decimal) sra to_integer(unsigned(fw))))) + 1) ;
+if sign = '0' then
+	decimalReg		:= 	to_stdlogicvector(to_bitvector(decimal) sra to_integer(unsigned(fw)));
+else
+	decimalReg		:=		std_logic_vector(unsigned(not(to_stdlogicvector(to_bitvector(decimal) sra to_integer(unsigned(fw))))) + 1) ;
+end if;
+
 
 
 --Get the fractional part from input in the leftmost bit of fraction register.
-fraction 		<= 	std_logic_vector(unsigned(decimal) sll to_integer(inputWidth-unsigned(fw)));
+fraction 		:= 	std_logic_vector(unsigned(decimal) sll to_integer(inputWidth-unsigned(fw)));
+
+
 
 --Cascade fractional part and unsigned value of integer part to check the first one in the input.
-PEReg				<= 	to_stdlogicvector(to_bitvector(decimalReg) sll to_integer(unsigned(fw))) OR to_stdlogicvector(to_bitvector(fraction) srl to_integer(inputWidth-unsigned(fw)));
+PEReg				:= 	to_stdlogicvector(to_bitvector(decimalReg) sll to_integer(unsigned(fw))) OR to_stdlogicvector(to_bitvector(fraction) srl to_integer(inputWidth-unsigned(fw)));
+findFirst1(PEReg,shiftNumber,oneFlag);
 
-sign<=decimal(inputWidth-1);
-
-Priority_Encoder: PE_First_128Bit
-	PORT MAP(PEReg,shiftNumber,oneFlag);
-
-
-
-process(decimal,decimalReg,oneFlag,sign,shiftNumber,fw,fraction)
-
-variable exponent: STD_LOGIC_VECTOR(7 downto 0);		--Value of biased exponent.
-variable mantissa: STD_LOGIC_VECTOR(22 downto 0);		--Variable to hold mantissa part of floating point number.
-variable temp	  : STD_LOGIC_VECTOR(inputWidth-1 downto 0);		--Temp. register to hold intermediate values.
-variable temp2	  : STD_LOGIC_VECTOR(inputWidth-1 downto 0);
-
-
-begin
-if oneFlag='0' then		--For now,it is assumed that only input that might equal to a denormalized floating point is zero,which is handled specially.
+if oneFlag='0' then		
 	fp<=X"00000000";
 else
-	exponent := std_logic_vector(to_signed(127,exponent'length)+(('0'& signed(shiftNumber))- ('0'& signed(fw))));		--Starting from the first zero,shift left or right until the first zero,which gives the value of exponent.
+if ( to_integer(unsigned(fw))-to_integer(unsigned(shiftNumber))) >= 127 then
+	exponent := (others => '0');
+	mantissa := std_logic_vector(unsigned(PEReg(22 downto 0)) sll to_integer(inputWidth-(unsigned(fw)+1))) ;
+else
+	exponent := std_logic_vector(to_signed(127,exponent'length)+(( signed(shiftNumber))- ( signed(fw))));		--Starting from the first zero,shift left or right until the first zero,which gives the value of exponent.
 	temp		:= std_logic_vector(unsigned(decimalReg) sll to_integer(inputWidth-(('0'& signed(shiftNumber))-('0' & signed(fw))))); --Apply left shift to integer part,so that the magnitude is stored in upper-most bits.
 	temp2		:=	std_logic_vector(unsigned(fraction) srl to_integer(signed(shiftNumber)-signed(fw)));										 --Apply right shift to fraction,until it is stored in upper-most bits after the point.
 	mantissa:=temp(inputWidth-1 downto (inputWidth-1)-22) OR  temp2(inputWidth-1 downto (inputWidth-1)-22)  ; 							 --Generate the mantissa part,by cascading integer and fraction part of the input.
+end if;
 	fp<=sign&exponent&mantissa;
 end if;
 

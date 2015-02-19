@@ -13,19 +13,18 @@ ARCHITECTURE behavior OF DecimalToFP_TB IS
  
     COMPONENT DecimalToFP
 	 Generic (
-				inputWidth: INTEGER := 32;
-				fwWidth   : INTEGER := 5
+				inputWidth: INTEGER := 150;
+				fwWidth   : INTEGER := 8
 				);
-	 Port ( 	fw		  : in STD_LOGIC_VECTOR(fwWidth -1 downto 0);
-				decimal : in  STD_LOGIC_VECTOR (inputWidth-1 downto 0);
-				fp : out  STD_LOGIC_VECTOR (31 downto 0));
+	 Port ( 	fw		  : in STD_LOGIC_VECTOR(fwWidth -1 downto 0);			-- Floating width
+				decimal : in  STD_LOGIC_VECTOR (inputWidth-1 downto 0);		-- Fixed-point input
+				fp : out  STD_LOGIC_VECTOR (31 downto 0));						-- Single precision floating-point output
     END COMPONENT;
     
 
    --Inputs
-   signal decimal : std_logic_vector(127 downto 0) := (others => '0');
-	
-	signal fw		: std_logic_vector(6 downto 0) := (others => '0');
+   signal decimal : std_logic_vector(149 downto 0) := (others => '0');	
+	signal fw		: std_logic_vector(7 downto 0) := (others => '0');
 
  	--Outputs
    signal fp : std_logic_vector(31 downto 0);
@@ -36,8 +35,8 @@ BEGIN
 	-- Instantiate the Unit Under Test (UUT)
    uut: DecimalToFP 
 			GENERIC MAP (
-			inputWidth => 128,
-			fwWidth	  => 7
+			inputWidth => 150,
+			fwWidth	  => 8
 			)
 			PORT MAP (
 	
@@ -52,17 +51,50 @@ BEGIN
       -- hold reset state for 100 ns.
       wait for 100 ns;	
 		
-		fw<="0000000";
+		fw<="00000010";
 		
-		decimal<=X"7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+		decimal<="00"&X"0000000000000000000000000000000000025";
 		wait for 200 ns;
-		fw<="1111111";
+		fw<="10010101";
 		
-		decimal<=X"00000000000000000000000000000001";
+		decimal<="00"&X"0000000000000000000000000000000000001";
 		wait for 200 ns;
-		fw<="0000010";
-		decimal<=X"00000000000000000000000000000025";
+		fw<="10010100";
+		
+		decimal<="00"&X"0000000000000000000000000000000000001";
 		wait for 200 ns;
+		fw<="01111111";
+		
+		decimal<="00"&X"0000000000000000000000000000000000001";
+		
+		wait for 200 ns;
+		fw<="00010101";
+		
+		decimal<="01"&X"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+		
+		wait for 200 ns;
+		fw<="00010100";
+		
+		decimal<="01"&X"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+		
+		wait for 200 ns;
+		fw<="00010100";
+		
+		decimal<="10"&X"0000000000000000000000000000000000001";
+		
+		wait for 200 ns;
+		fw<="00010101";
+		
+		decimal<="10"&X"0000000000000000000000000000000000001";
+		
+		wait for 200 ns;
+		fw<="00000010";
+		
+		decimal<="11"&X"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFDD";
+--		wait for 200 ns;
+--		fw<="0000010";
+--		decimal<=X"00000000000000000000000000000025";
+--		wait for 200 ns;
 		
 		
 		
