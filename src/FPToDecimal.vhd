@@ -33,7 +33,7 @@ variable decimalIntPart		: STD_LOGIC_VECTOR(outputWidth-1 downto 0);
 variable exponent				: INTEGER RANGE 0 to 255;				--Unsigned value of exponent,used for checking various cases.
 variable exponent_val		: INTEGER RANGE -127 to 126;			--Biased value of exponent.
 variable fw_val				: INTEGER RANGE 0 to outputWidth-1;	--Value of the index of the point in fixed-point output.
-
+variable decResized			: STD_LOGIC_VECTOR(outputWidth-1 downto 0);	
 begin
 exponent			:=	to_integer(unsigned(fp(30 downto 23)));
 mantissa			:=	fp(22 downto 0);
@@ -82,7 +82,8 @@ else
 		dec						:= ("100"&X"00000") OR  std_logic_vector(unsigned(temp) sll (22 - exponent_val));
 		decimalFracPart		:= std_logic_vector(resize(unsigned(fraction) srl (23-fw_val),decimalFracPart'length));
 		if sign='0' then
-			decimalIntPart			:=  std_logic_vector(resize(unsigned(dec) srl (22-(fw_val+exponent_val)),decimalIntPart'length));
+			decResized				:= std_logic_vector(resize(unsigned(dec),decimalIntPart'length));
+			decimalIntPart			:=  std_logic_vector(unsigned(decResized) srl (22-(fw_val+exponent_val)));
 		else
 			decimalIntPart			:= std_logic_vector(resize(signed(not(unsigned(dec) srl (22-(fw_val+exponent_val))))+1,decimalIntPart'length)) ;
 		end if;
