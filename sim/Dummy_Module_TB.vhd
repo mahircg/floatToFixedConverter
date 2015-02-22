@@ -21,7 +21,7 @@ ARCHITECTURE behavior OF Dummy_Module_TB IS
         );
     END COMPONENT;
 	 
-	 --Component to convert floating-point number into 2's complement decimal number
+	 
 	 COMPONENT DecimalToFP
     GENERIC (
 				inputWidth: INTEGER := 150;
@@ -32,7 +32,7 @@ ARCHITECTURE behavior OF Dummy_Module_TB IS
 				fp : out  STD_LOGIC_VECTOR (31 downto 0));						-- Single precision floating-point output
     END COMPONENT;
 	 
-	 --Component to convert 2's complement decimal number into single-precision floating-point number
+	 
     COMPONENT FPToDecimal
     GENERIC (
 			  outputWidth		: INTEGER := 150;
@@ -48,6 +48,12 @@ ARCHITECTURE behavior OF Dummy_Module_TB IS
     
 	constant outputWidth 	: INTEGER := 150;
 	constant fwWidth			: INTEGER := 8;
+	
+	type fixedPointArray  is array (31 downto 0) of STD_LOGIC_VECTOR(outputWidth-1 downto 0);
+	type fixedIndexArray  is array (31 downto 0) of STD_LOGIC_VECTOR(fwWidth-1     downto 0);
+	
+	signal fixedPointStimuli : fixedPointArray;
+	signal indexStimuli		 : fixedIndexArray;
 	
    --Inputs of dummy module
    signal CLK : std_logic := '0';
@@ -81,7 +87,7 @@ ARCHITECTURE behavior OF Dummy_Module_TB IS
 	
 	--Simulation signals
 
-	signal counter  : std_logic_vector(31 downto 0)  := (others => '0');
+	signal counter  : INTEGER := 0;
 	
 
 
@@ -129,39 +135,104 @@ BEGIN
 	--Circuit uses rising edge
 	edge   <= '1';
 	
+	-- Initialize test values,refer to index values for corresponding fixed point index in each signal
+	fixedPointStimuli(0) 		<= 		"00"&X"0000000000000000000000000000000000025";		-- 9.25
+	indexStimuli(0)				<=			"00000010";
+	fixedPointStimuli(1)			<=			"00"&X"0000000000000000000000000000000000001";		-- 2^-149
+	indexStimuli(1)				<=			"10010101";
+	fixedPointStimuli(2)			<=			"00"&X"0000000000000000000000000000000000001";		-- 2^-148
+	indexStimuli(2)				<=			"10010100";
+	fixedPointStimuli(3)			<=			"00"&X"0000000000000000000000000000000000001";		-- 2^-127
+	indexStimuli(3)				<=			"01111111";
+	fixedPointStimuli(4)			<=			"01"&X"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";		-- ~3.4E38
+	indexStimuli(4)				<=			"00010101";
+	fixedPointStimuli(5)			<=			"01"&X"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";		-- ~7.8E38
+	indexStimuli(5)				<=			"00010100";
+	fixedPointStimuli(6)			<=			"10"&X"0000000000000000000000000000000000001";		-- -2^20
+	indexStimuli(6)				<=			"00010100";
+	fixedPointStimuli(7)			<=			"10"&X"0000000000000000000000000000000000001";		-- -2^21
+	indexStimuli(7)				<=			"00010101";
+	fixedPointStimuli(8)			<=			"00"&X"0000000000000000000000000000000000002";			-- 0.1875
+	indexStimuli(8)				<=			"00000100";
+	fixedPointStimuli(9)			<=			"00"&X"0000000000000000000000000000000000001";			-- 0.125
+	indexStimuli(9)				<=			"00000011";
+	fixedPointStimuli(10)		<=			"11"&X"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFDD";		-- -9.25
+	indexStimuli(10)				<=			"00000010";
+	fixedPointStimuli(11)		<=			"00"&X"0000000000000000000000000000000000064";			-- 100
+	indexStimuli(11)				<=			"00000000";
+	fixedPointStimuli(12)		<=			"11"&X"2612065234243532FCDB001234176F0100023";		--Arbitrary input values(12 to 31)
+	indexStimuli(12)				<=			"01000101";
+	fixedPointStimuli(13)		<=			"00"&X"21432532FFEEC781341000123457120100FCD";		
+	indexStimuli(13)				<=			"01000101";
+	fixedPointStimuli(14)		<=			"10"&X"1237753756835322381DEEE0000BCCADBBBBB";		
+	indexStimuli(14)				<=			"00000101";
+	fixedPointStimuli(15)		<=			"00"&X"260012FCDDF6578134125341634EDAEDC0012";		
+	indexStimuli(15)				<=			"00001111";
+	fixedPointStimuli(16)		<=			"00"&X"532452345345342643788790890000CFBDBAA";		
+	indexStimuli(16)				<=			"01001101";
+	fixedPointStimuli(17)		<=			"00"&X"260012FCDDF65781341000123457120100FCD";		
+	indexStimuli(17)				<=			"00000000";
+	fixedPointStimuli(18)		<=			"00"&X"FCDDFEA145132568948643653786570111111";		
+	indexStimuli(18)				<=			"00101101";
+	fixedPointStimuli(19)		<=			"00"&X"260012FCDDF60000000000000000000000000";		
+	indexStimuli(19)				<=			"00010101";
+	fixedPointStimuli(20)		<=			"00"&X"260012FCDDF65781341000123457120100FCD";		
+	indexStimuli(20)				<=			"00000111";
+	fixedPointStimuli(21)		<=			"00"&X"260012FCDDF10239012BBBFDE141090301090";		
+	indexStimuli(21)				<=			"00000101";
+	fixedPointStimuli(22)		<=			"00"&X"260012FCDDF6578130989048120193190248A";		
+	indexStimuli(22)				<=			"01000101";
+	fixedPointStimuli(23)		<=			"00"&X"260012FCDD156756898760123457EEEEEEEEE";		
+	indexStimuli(23)				<=			"00000101";
+	fixedPointStimuli(24)		<=			"00"&X"654786548DF6578134100012BCA1232EDAEDA";		
+	indexStimuli(24)				<=			"00000101";
+	fixedPointStimuli(25)		<=			"00"&X"000000000DF65781341000123457010010101";		
+	indexStimuli(25)				<=			"00000101";
+	fixedPointStimuli(26)		<=			"00"&X"11123133DDF65781341000123457120100FCD";		
+	indexStimuli(26)				<=			"00000101";
+	fixedPointStimuli(27)		<=			"00"&X"CD14325789273851130908908978760011FBD";	
+	indexStimuli(27)				<=			"00000101";
+	fixedPointStimuli(28)		<=			"00"&X"26001FCDBFFFFFFFFFFFFFFF3457120100FCD";		
+	indexStimuli(28)				<=			"00110101";
+	fixedPointStimuli(29)		<=			"00"&X"FF0002FCDDF65781341000123457120100FCD";		
+	indexStimuli(29)				<=			"00000101";
+	fixedPointStimuli(30)		<=			"10"&X"AD0012FCDDF65781341000123457120100FCD";		
+	indexStimuli(30)				<=			"00000101";
+	fixedPointStimuli(31)		<=			"10"&X"260012FCDDF6FBDCAAA131234124000290492";		
+	indexStimuli(31)				<=			"01000110";
+	
+	
 	--Read the output of comm. module in each cycle when its internal memory is full.Write the FP number into FP-to-Decimal converter to see the output.
 	FP_Ready_Process: process(CLK)
 	begin
 	if rising_edge(CLK) then
 		if valid = '1' then
+			fwWidthFloatToFixed <= indexStimuli(counter);
 			fpInReg <= result;
-			--assert (fpInReg(30 downto 23) /= X"FF") report "NAN or infinity occured!" severity failure;
+			assert(decimalOutReg /= fixedPointStimuli(counter)) report "Value mismatch" severity warning;		--Check if converted variable is the same
+			counter <= counter + 1;
+		end if;
+		if counter=31 and valid='0' then 
+			assert false report "Simulation ended" severity failure;	-- Stop simulation
 		end if;
 	end if;
 	end process;
 	
 
-   --Write all possible values of a 32 bit signal into input of FP-to-decimal counter.Then write its outptut to comm. module for transmit.
-	--In every 32 cycles,buffer is full and this process waits until comm. modules internal memory is empty again.
+   --Try the values in input array on the modules.
    stim_proc: process
    begin	
 	enable <= '0';
 	wait for 10*CLK_period + CLK_period/2;
-	fwWidthFixedToFloat <= "00000000";
-	fwWidthFloatToFixed <= "00000000";
-	while true loop
-		enable <= '1' after CLK_period;
-		for decimalCounter in 0 to 32 loop
-			decimalInReg(31 downto 0)	<= counter; 
-			decimalInReg(149 downto 32 ) <= (others => '0');
-			operand 	<= fpOutReg;
-			counter <= std_logic_vector(unsigned(counter) + 1) after CLK_period ;
-			wait for CLK_period ;
-		end loop;
-		enable <= '0';
-		wait until valid='0';
+	enable <= '1' after CLK_period;
+	for decimalCounter in 0 to 31 loop
+		decimalInReg <= fixedPointStimuli(decimalCounter);
+		fwWidthFixedToFloat <= indexStimuli(decimalCounter);
+		operand 	<= fpOutReg;
+		wait for CLK_period ;
 	end loop;
-	
+	enable <= '0';
+	wait;
    end process;
 
 
