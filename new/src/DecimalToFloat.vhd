@@ -19,6 +19,9 @@ subtype MantissaType is STD_LOGIC_VECTOR(22 downto 0);
 subtype BinaryFractionType is STD_LOGIC_VECTOR(149 downto 0);
 subtype BinaryIntegerType is STD_LOGIC_VECTOR(127 downto 0);
 
+constant SINGLE_PRECISION_MAX : REAL := 3.4028234663852885981170418348452e38;
+constant SINGLE_PRECISION_MIN : REAL := -3.4028234663852885981170418348452e38;
+
 function findFirstOneInInteger(intBinary: BinaryIntegerType) return INTEGER is
 variable index: INTEGER RANGE -1 to 127 := -1;
 begin
@@ -82,7 +85,7 @@ end calculateFractionalPart;
 begin
 
 process(Decimal)
-variable exponent_val: INTEGER RANGE -127 to 127;
+variable exponent_val: INTEGER RANGE -127 to 128;
 variable mantissa		: STD_LOGIC_VECTOR(22 downto 0);
 variable sign			: STD_LOGIC;
 variable exponent		: STD_LOGIC_VECTOR(7 downto 0);
@@ -102,53 +105,66 @@ begin
 
 if(decimal<0.0) then
 	sign := '1';
-else
-	sign :='0';
-end if;
-
-if sign = '0' then
-	integerPart := FLOOR(decimal);
-	fractionalPart := decimal-integerPart;
-else
-	integerPart := FLOOR(-decimal);
-	fractionalPart := -decimal-integerPart;
-end if;
-
-
-fractionalPartBinary:=calculateFractionalPart(fractionalPart);
-integerPartBinary   := calculateIntegerPart(integerPart);
-integerFirstOneIndex:= findFirstOneInInteger(integerPartBinary);
-fractionFirstOneIndex:=findFirstOneInFraction(fractionalPartBinary);
-
-if integerFirstOneIndex = -1 then
-	integerOneFound := '0';
-else
-	integerOneFound := '1';
-end if;
-
-if integerOneFound = '1' then	
-	exponent_val:=integerFirstOneIndex;
-	if exponent_val > 21 then
-		mantissa(22 downto 0) := integerPartBinary(exponent_val-1 downto exponent_val-1-22);			
-	else
-		mantissa(22 downto 22-exponent_val-1) := integerPartBinary(exponent_val-1 downto 0);
-		mantissa(22-exponent_val downto 22-exponent_val-(149-fractionFirstOneIndex)) := fractionalPartBinary(149 downto 149-fractionFirstOneIndex);
+	if Decimal < SINGLE_PRECISION_MIN then
+		n_infinity := '1';
+		exponent_val:=128;
+		mantissa := (others => '0');
 	end if;
 else
-	if fractionFirstOneIndex /= -1 then
-		if fractionFirstOneIndex <= 23 then
-			exponent_val:=-127;
-			mantissa(22 downto 0) := fractionalPartBinary(fractionFirstOneIndex downto fractionFirstOneIndex-22);
-		else
-			exponent_val := fractionFirstOneIndex-149-1;
-			mantissa(22 downto 0) := fractionalPartBinary(fractionFirstOneIndex-1 downto fractionFirstOneIndex-1-22);
-		end if;
-	else
-		exponent_val :=-127;
+	sign :='0';
+	if Decimal > SINGLE_PRECISION_MAX then
+		p_infinity := '1';
+		exponent_val:=128;
 		mantissa := (others => '0');
 	end if;
 end if;
-	
+
+if(p_infinity = '0' AND n_infinity = '0') then
+	if sign = '0' then
+		integerPart := FLOOR(decimal);
+		fractionalPart := decimal-integerPart;
+	else
+		integerPart := FLOOR(-decimal);
+		fractionalPart := -decimal-integerPart;
+	end if;
+
+
+	fractionalPartBinary:=calculateFractionalPart(fractionalPart);
+	integerPartBinary   := calculateIntegerPart(integerPart);
+	integerFirstOneIndex:= findFirstOneInInteger(integerPartBinary);
+	fractionFirstOneIndex:=findFirstOneInFraction(fractionalPartBinary);
+
+
+
+	if integerFirstOneIndex = -1 then
+		integerOneFound := '0';
+	else
+		integerOneFound := '1';
+	end if;
+
+	if integerOneFound = '1' then	
+		exponent_val:=integerFirstOneIndex;
+		if exponent_val > 21 then
+			mantissa(22 downto 0) := integerPartBinary(exponent_val-1 downto exponent_val-1-22);			
+		else
+			mantissa(22 downto 22-exponent_val-1) := integerPartBinary(exponent_val-1 downto 0);
+			mantissa(22-exponent_val downto 22-exponent_val-(149-fractionFirstOneIndex)) := fractionalPartBinary(149 downto 149-fractionFirstOneIndex);
+		end if;
+	else
+		if fractionFirstOneIndex /= -1 then
+			if fractionFirstOneIndex <= 23 then
+				exponent_val:=-127;
+				mantissa(22 downto 0) := fractionalPartBinary(fractionFirstOneIndex downto fractionFirstOneIndex-22);
+			else
+				exponent_val := fractionFirstOneIndex-149-1;
+				mantissa(22 downto 0) := fractionalPartBinary(fractionFirstOneIndex-1 downto fractionFirstOneIndex-1-22);
+			end if;
+		else
+			exponent_val :=-127;
+			mantissa := (others => '0');
+		end if;
+	end if;
+end if;	
 exponent := std_logic_vector(to_unsigned((exponent_val + 127),8));
 
 

@@ -59,6 +59,9 @@ BEGIN
 		Decimal <= 1.0306734E-38;
 		wait for 100 ns;
 		Decimal <= 3.1932096E38;
+		wait for 100 ns;
+		
+		Decimal <= 3.5E38;
 		
       -- insert stimulus here 
 
