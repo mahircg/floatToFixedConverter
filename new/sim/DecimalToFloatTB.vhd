@@ -12,11 +12,13 @@ ARCHITECTURE behavior OF DecimalToFloatTB IS
     -- Component Declaration for the Unit Under Test (UUT)
  
     COMPONENT DecimalToFloat
-    PORT(
-         Decimal : IN  REAL;
-         FP : OUT  std_logic_vector(31 downto 0)
-        );
-    END COMPONENT;
+	Port(	Decimal: in REAL;
+			p_inf  : out STD_LOGIC;
+			n_inf  : out STD_LOGIC;
+			NaN	 : out STD_LOGIC;
+			FP		 : out STD_LOGIC_VECTOR(31 downto 0)
+	);
+	END COMPONENT;
     
 
    --Inputs
@@ -24,9 +26,9 @@ ARCHITECTURE behavior OF DecimalToFloatTB IS
 
  	--Outputs
    signal FP : std_logic_vector(31 downto 0);
-   -- No clocks detected in port list. Replace <clock> below with 
-   -- appropriate port name 
- 
+   signal p_inf : STD_LOGIC;
+	signal n_inf : STD_LOGIC;
+	signal NaN : STD_LOGIC;
    
  
 BEGIN
@@ -34,6 +36,9 @@ BEGIN
 	-- Instantiate the Unit Under Test (UUT)
    uut: DecimalToFloat PORT MAP (
           Decimal => Decimal,
+			 p_inf => p_inf,
+			 n_inf => n_inf,
+			 NaN => NaN,
           FP => FP
         );
 
@@ -52,6 +57,8 @@ BEGIN
 		Decimal <= 0.2346;
 		wait for 100 ns;
 		Decimal <= 1.0306734E-38;
+		wait for 100 ns;
+		Decimal <= 3.1932096E38;
 		
       -- insert stimulus here 
 

@@ -6,6 +6,9 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity DecimalToFloat is
 	Port(	Decimal: in REAL;
+			p_inf  : out STD_LOGIC;
+			n_inf  : out STD_LOGIC;
+			NaN	 : out STD_LOGIC;
 			FP		 : out STD_LOGIC_VECTOR(31 downto 0)
 	);
 end DecimalToFloat;
@@ -38,18 +41,18 @@ end loop;
 return index;
 end findFirstOneInFraction;
 
-function calculateIntegerPart(int: INTEGER) return BinaryIntegerType is
+function calculateIntegerPart(int: REAL) return BinaryIntegerType is
 variable integerBinary: BinaryIntegerType := (others => '0');
-variable res			 : INTEGER;
+variable res			 : REAL;
 begin
 res := int;
 for i in 0 to 127 loop
-	if res mod 2 = 1 then
+	if "MOD"(res,2.0) = 1.0 then
 		integerBinary(i) := '1';
 	else
 		integerBinary(i) := '0';
 	end if;
-	res := res / 2;
+	res := FLOOR(res / 2.0);
 end loop;
 return integerBinary;
 end calculateIntegerPart;
@@ -79,12 +82,12 @@ end calculateFractionalPart;
 begin
 
 process(Decimal)
-variable exponent_val: INTEGER RANGE -127 to 126;
+variable exponent_val: INTEGER RANGE -127 to 127;
 variable mantissa		: STD_LOGIC_VECTOR(22 downto 0);
 variable sign			: STD_LOGIC;
 variable exponent		: STD_LOGIC_VECTOR(7 downto 0);
 
-variable integerPart : INTEGER;
+variable integerPart : REAL;
 variable integerPartBinary: BinaryIntegerType;
 variable fractionalPart: REAL;
 variable fractionalPartBinary : BinaryFractionType;
@@ -92,6 +95,8 @@ variable integerFirstOneIndex : INTEGER;
 variable fractionFirstOneIndex: INTEGER;
 variable integerOneFound		: STD_LOGIC;
 variable fractionOneFound		: STD_LOGIC;
+variable p_infinity				: STD_LOGIC := '0';
+variable n_infinity				: STD_LOGIC := '0';
 
 begin
 
@@ -102,11 +107,11 @@ else
 end if;
 
 if sign = '0' then
-	integerPart := INTEGER(FLOOR(decimal));
-	fractionalPart := decimal-REAL(integerPart);
+	integerPart := FLOOR(decimal);
+	fractionalPart := decimal-integerPart;
 else
-	integerPart := INTEGER(FLOOR(-decimal));
-	fractionalPart := -decimal-REAL(integerPart);
+	integerPart := FLOOR(-decimal);
+	fractionalPart := -decimal-integerPart;
 end if;
 
 
@@ -121,10 +126,14 @@ else
 	integerOneFound := '1';
 end if;
 
-if integerOneFound = '1' then		
-	exponent_val := integerFirstOneIndex;
-	mantissa(22 downto 22-integerFirstOneIndex-1) := integerPartBinary(integerFirstOneIndex-1 downto 0);
-	mantissa(22-integerFirstOneIndex downto 22-integerFirstOneIndex-(149-fractionFirstOneIndex)) := fractionalPartBinary(149 downto 149-fractionFirstOneIndex);
+if integerOneFound = '1' then	
+	exponent_val:=integerFirstOneIndex;
+	if exponent_val > 21 then
+		mantissa(22 downto 0) := integerPartBinary(exponent_val-1 downto exponent_val-1-22);			
+	else
+		mantissa(22 downto 22-exponent_val-1) := integerPartBinary(exponent_val-1 downto 0);
+		mantissa(22-exponent_val downto 22-exponent_val-(149-fractionFirstOneIndex)) := fractionalPartBinary(149 downto 149-fractionFirstOneIndex);
+	end if;
 else
 	if fractionFirstOneIndex /= -1 then
 		if fractionFirstOneIndex <= 23 then
@@ -142,8 +151,11 @@ end if;
 	
 exponent := std_logic_vector(to_unsigned((exponent_val + 127),8));
 
-FP <= sign & exponent & mantissa;
 
+FP <= sign & exponent & mantissa;
+p_inf <= p_infinity;
+n_inf <= n_infinity;
+NaN<='0';
 end process;
 
 
