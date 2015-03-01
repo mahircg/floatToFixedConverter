@@ -147,7 +147,7 @@ if(p_infinity = '0' AND n_infinity = '0') then
 		if exponent_val > 21 then
 			mantissa(22 downto 0) := integerPartBinary(exponent_val-1 downto exponent_val-1-22);			
 		else
-			mantissa(22 downto 22-exponent_val-1) := integerPartBinary(exponent_val-1 downto 0);
+			mantissa(22 downto 22-exponent_val+1) := integerPartBinary(exponent_val-1 downto 0);
 			mantissa(22-exponent_val downto 22-exponent_val-(149-fractionFirstOneIndex)) := fractionalPartBinary(149 downto 149-fractionFirstOneIndex);
 		end if;
 	else
