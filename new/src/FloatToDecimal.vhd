@@ -71,6 +71,9 @@ elsif exponent = 0 then
 	NaN 	<= '0';
 	exponent_val	:= exponent - 127;
 	mantissaVal := calculateMantissa(mantissa,'0');
+	if(sign='1') then
+		mantissaVal:= -mantissaVal;
+	end if;
 	Decimal 		<= (2.0**REAL(exponent_val))*mantissaVal;
 
 else
@@ -79,6 +82,9 @@ else
 	NaN 	<= '0';
 	exponent_val	:= exponent - 127;
 	mantissaVal := calculateMantissa(mantissa,'1');
+	if(sign='1') then
+		mantissaVal:= -mantissaVal;
+	end if;
 	Decimal 		<= (2.0**REAL(exponent_val))*mantissaVal;
 	
 end if;

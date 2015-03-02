@@ -98,11 +98,12 @@ variable integerFirstOneIndex : INTEGER;
 variable fractionFirstOneIndex: INTEGER;
 variable integerOneFound		: STD_LOGIC;
 variable fractionOneFound		: STD_LOGIC;
-variable p_infinity				: STD_LOGIC := '0';
-variable n_infinity				: STD_LOGIC := '0';
+variable p_infinity				: STD_LOGIC ;
+variable n_infinity				: STD_LOGIC ;
 
 begin
-
+p_infinity := '0';
+n_infinity := '0';
 if(decimal<0.0) then
 	sign := '1';
 	if Decimal < SINGLE_PRECISION_MIN then
@@ -148,7 +149,11 @@ if(p_infinity = '0' AND n_infinity = '0') then
 			mantissa(22 downto 0) := integerPartBinary(exponent_val-1 downto exponent_val-1-22);			
 		else
 			mantissa(22 downto 22-exponent_val+1) := integerPartBinary(exponent_val-1 downto 0);
-			mantissa(22-exponent_val downto 22-exponent_val-(149-fractionFirstOneIndex)) := fractionalPartBinary(149 downto fractionFirstOneIndex);
+			if(fractionFirstOneIndex /= -1) then
+				mantissa(22-exponent_val downto 22-exponent_val-(149-fractionFirstOneIndex)) := fractionalPartBinary(149 downto fractionFirstOneIndex);
+			else
+				mantissa(22-exponent_val downto 0) := (others => '0');
+			end if;
 		end if;
 	else
 		if fractionFirstOneIndex /= -1 then
@@ -171,7 +176,7 @@ exponent := std_logic_vector(to_unsigned((exponent_val + 127),8));
 FP <= sign & exponent & mantissa;
 p_inf <= p_infinity;
 n_inf <= n_infinity;
-NaN<='0';
+NaN<='0';		--just for now 
 end process;
 
 
