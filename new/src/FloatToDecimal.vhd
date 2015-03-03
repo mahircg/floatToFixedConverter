@@ -42,7 +42,7 @@ begin
 process(FP)
 
 variable sign				:	STD_LOGIC;
-variable exponent_val	:	INTEGER RANGE -127 to 126;
+variable exponent_val	:	INTEGER RANGE -127 to 127;
 variable exponent			:  INTEGER RANGE 0 to 255;
 variable mantissa			:	STD_LOGIC_VECTOR(22 downto 0);
 variable mantissaVal		: 	REAL := 0.0;

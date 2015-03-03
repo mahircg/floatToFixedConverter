@@ -186,6 +186,8 @@ BEGIN
 		operand 	<= FP_Out;
 		wait for CLK_period ;
 	end loop;
+	operand 	<= FP_Out;
+	wait for CLK_period ;
 	enable <= '0';
 	wait;
    end process;
